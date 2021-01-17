@@ -167,3 +167,5 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
+# different
+test.py
