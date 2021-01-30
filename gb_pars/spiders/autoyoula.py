@@ -1,39 +1,26 @@
-import os
-import re
-import pymongo
 import scrapy
+from ..loaders import AutoyoulaLoader
 from scrapy.http import Response
-from dotenv import load_dotenv
-from urllib.parse import urljoin
+
 
 class AutoyoulaSpider(scrapy.Spider):
     name = 'autoyoula'
     allowed_domains = ['auto.youla.ru']
     start_urls = ['https://auto.youla.ru/']
 
-    load_dotenv('.env')
-    data_base_url = os.getenv('DATA_BASE_URL')
-    data_client = pymongo.MongoClient(data_base_url)
-    data_base = data_client['parsing_2021']
-    collection = data_base[name]
-
     css_query = {
-        "brand": "div.ColumnItemList_container__5gTrc a.blackLink",
+        "brands": "div.ColumnItemList_container__5gTrc a.blackLink",
         "pagination": "div.Paginator_block__2XAPy a.Paginator_button__u1e7D",
         "ads": "article.SerpSnippet_snippet__3O1t2 a.SerpSnippet_name__3F7Yu",
     }
 
-    data_query = {
-        "title": "div.AdvertCard_advertTitle__1S1Ak::text",
-        "price": "div.AdvertCard_price__3dDCr::text",
-        "photos": "img.PhotoGallery_photoImage__2mHGn::attr(src)",  # Список фото объявления (ссылки)
-        "specifications": [
-            "div.AdvertSpecs_row__ljPcX div.AdvertSpecs_label__2JHnS::text",
-            "div.AdvertSpecs_row__ljPcX div.AdvertSpecs_data__xK2Qx::text, div.AdvertSpecs_row__ljPcX div.AdvertSpecs_data__xK2Qx a::text"
-        ],  # Список характеристик
-        "description": "div.AdvertCard_descriptionInner__KnuRi::text",
-        "author": "script::text",  # Ссылка на автора объявления
-        # "telephone": ""  # Телефон
+    data_xpath = {
+        "title": "//div[@data-target='advert']//div[@data-target='advert-title']/text()",
+        "price": "//div[@data-target='advert-price']/text()",
+        "images": "//figure[contains(@class, 'PhotoGallery_photo')]//img/@src",
+        "specifications": "//h3[contains(text(), 'Характеристики')]/../div/div",
+        "author": "//body/script[contains(text(), 'window.transitState = decodeURIComponent')]",
+        "description": "//div[@data-target='advert-info-descriptionFull']/text()",
     }
 
     @staticmethod
@@ -41,28 +28,19 @@ class AutoyoulaSpider(scrapy.Spider):
         for link in list_links:
             yield response.follow(link.attrib.get("href"), callback=callback)
 
-    def parse(self, response: Response):
-        yield from self.gen_task(response, response.css(self.css_query["brand"]), self.brand_parse)
+    def parse(self, response, **kwargs):
+        brands_links = response.css(self.css_query["brands"])
+        yield from self.gen_task(response, brands_links, self.brand_parse)
 
-    def brand_parse(self, response: Response):
-        yield from self.gen_task(response, response.css(self.css_query["pagination"]), self.brand_parse)
-        yield from self.gen_task(response, response.css(self.css_query["ads"]), self.ads_parse)
+    def brand_parse(self, response):
+        pagination_links = response.css(self.css_query["pagination"])
+        yield from self.gen_task(response, pagination_links, self.brand_parse)
+        ads_links = response.css(self.css_query["ads"])
+        yield from self.gen_task(response, ads_links, self.ads_parse)
 
-    def ads_parse(self, response: Response):
-        data = {}
-        for name, query in self.data_query.items():
-            if name == "photos":
-                data[name] = response.css(query).getall()
-            elif name == "specifications":
-                query_lst_0 = response.css(query[0]).getall()
-                query_lst_1 = response.css(query[1]).getall()
-                data[name] = dict(zip(query_lst_0, query_lst_1))
-            elif name == "author":
-                script = response.css(query).getall()
-                result_re = re.findall(r"youlaId%22%2C%22([0-9a-zA-Z]+)%22%2C%22avatar", script[8])
-                url_user = "https://youla.ru/user/"
-                data[name] = urljoin(url_user, result_re[0])
-            else:
-                data[name] = response.css(query).get()
-
-        self.collection.insert_one(data)
+    def ads_parse(self, response):
+        loader = AutoyoulaLoader(response=response)
+        for key, selector in self.data_xpath.items():
+            loader.add_xpath(key, selector)
+        loader.add_value("url", response.url)
+        yield loader.load_item()

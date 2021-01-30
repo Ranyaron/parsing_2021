@@ -10,3 +10,14 @@ class GbParsItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     pass
+
+
+class AutoyoulaItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    images = scrapy.Field()
+    description = scrapy.Field()
+    author = scrapy.Field()
+    specifications = scrapy.Field()
+    price = scrapy.Field()
