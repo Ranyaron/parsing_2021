@@ -1,10 +1,12 @@
 import os
 import re
+import base64
 import pymongo
 import scrapy
 from scrapy.http import Response
 from dotenv import load_dotenv
 from urllib.parse import urljoin
+
 
 class AutoyoulaSpider(scrapy.Spider):
     name = 'autoyoula'
@@ -33,7 +35,7 @@ class AutoyoulaSpider(scrapy.Spider):
         ],  # Список характеристик
         "description": "div.AdvertCard_descriptionInner__KnuRi::text",
         "author": "script::text",  # Ссылка на автора объявления
-        # "telephone": ""  # Телефон
+        "telephone": "script::text"  # Телефон
     }
 
     @staticmethod
@@ -62,6 +64,14 @@ class AutoyoulaSpider(scrapy.Spider):
                 result_re = re.findall(r"youlaId%22%2C%22([0-9a-zA-Z]+)%22%2C%22avatar", script[8])
                 url_user = "https://youla.ru/user/"
                 data[name] = urljoin(url_user, result_re[0])
+            elif name == "telephone":
+                script = response.css(query).getall()
+                result_re = re.findall(r"phone%22%2C%22([0-9a-zA-Z]+)Xw%3D%3D%22%2C%22time", script[8])
+                result_encode = result_re[0].encode("utf-8")
+                result_decode_1 = base64.b64decode(result_encode)
+                result_decode_2 = base64.b64decode(result_decode_1)
+                result_decode = result_decode_2.decode("utf-8")
+                data[name] = result_decode
             else:
                 data[name] = response.css(query).get()
 
