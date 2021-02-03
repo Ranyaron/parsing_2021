@@ -1,6 +1,5 @@
 import scrapy
 from ..loaders import AutoyoulaLoader
-from scrapy.http import Response
 
 
 class AutoyoulaSpider(scrapy.Spider):

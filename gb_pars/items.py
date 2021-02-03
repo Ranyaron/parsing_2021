@@ -23,7 +23,27 @@ class AutoyoulaItem(scrapy.Item):
     price = scrapy.Field()
 
 
-class HhruItem(scrapy.Item):
+class HhruAdsItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    salary = scrapy.Field()
+    description = scrapy.Field()
+    skills = scrapy.Field()
+    url_author = scrapy.Field()
+
+
+class HhruAuthorItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    name = scrapy.Field()
+    link = scrapy.Field()
+    areas = scrapy.Field()
+    description = scrapy.Field()
+    vacancies = scrapy.Field()
+
+
+class HhruAuthorAdsItem(scrapy.Item):
     _id = scrapy.Field()
     url = scrapy.Field()
     title = scrapy.Field()
