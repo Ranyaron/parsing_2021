@@ -51,3 +51,9 @@ class HhruAuthorAdsItem(scrapy.Item):
     description = scrapy.Field()
     skills = scrapy.Field()
     url_author = scrapy.Field()
+
+
+class InstagramItem(scrapy.Item):
+    _id = scrapy.Field()
+    url = scrapy.Field()
+    images = scrapy.Field()
