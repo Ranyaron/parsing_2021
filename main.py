@@ -5,6 +5,7 @@ from scrapy.settings import Settings
 from gb_pars.spiders.autoyoula import AutoyoulaSpider
 from gb_pars.spiders.hhru import HhruSpider
 from gb_pars.spiders.instagram import InstagramSpider
+from gb_pars.spiders.zillow import ZillowSpider
 
 if __name__ == "__main__":
     load_dotenv(".env")
@@ -13,5 +14,6 @@ if __name__ == "__main__":
     crawler_process = CrawlerProcess(settings=crawler_settings)
     # crawler_process.crawl(AutoyoulaSpider)
     # crawler_process.crawl(HhruSpider)
-    crawler_process.crawl(InstagramSpider, login=os.getenv("LOGIN"), password=os.getenv("PASSWORD"))
+    # crawler_process.crawl(InstagramSpider, login=os.getenv("LOGIN"), password=os.getenv("PASSWORD"))
+    crawler_process.crawl(ZillowSpider)
     crawler_process.start()
