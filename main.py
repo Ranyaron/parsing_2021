@@ -14,6 +14,6 @@ if __name__ == "__main__":
     crawler_process = CrawlerProcess(settings=crawler_settings)
     # crawler_process.crawl(AutoyoulaSpider)
     # crawler_process.crawl(HhruSpider)
-    # crawler_process.crawl(InstagramSpider, login=os.getenv("LOGIN"), password=os.getenv("PASSWORD"))
-    crawler_process.crawl(ZillowSpider)
+    crawler_process.crawl(InstagramSpider, login=os.getenv("LOGIN"), password=os.getenv("PASSWORD"))
+    # crawler_process.crawl(ZillowSpider)
     crawler_process.start()

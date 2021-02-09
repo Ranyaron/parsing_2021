@@ -2,7 +2,7 @@ import re
 from urllib.parse import urljoin
 from scrapy import Selector
 from scrapy.loader import ItemLoader
-from .items import AutoyoulaItem, HhruAdsItem, HhruAuthorItem, HhruAuthorAdsItem, InstagramItem
+from .items import AutoyoulaItem, HhruAdsItem, HhruAuthorItem, HhruAuthorAdsItem, InstagramTagItem, InstagramImageItem
 from itemloaders.processors import TakeFirst, MapCompose
 
 
@@ -111,7 +111,13 @@ class HhruAuthorAdsLoader(ItemLoader):
     url_author_out = TakeFirst()
 
 
-class InstagramLoader(ItemLoader):
-    default_item_class = InstagramItem
-    url_out = TakeFirst()
-    # images_out = TakeFirst()
+class InstagramTagLoader(ItemLoader):
+    default_item_class = InstagramTagItem
+    data_out = TakeFirst()
+    date_out = TakeFirst()
+
+
+class InstagramImageLoader(ItemLoader):
+    default_item_class = InstagramImageItem
+    data_out = TakeFirst()
+    date_out = TakeFirst()
