@@ -1,6 +1,7 @@
 import scrapy
 import json
-from ..loaders import InstagramLoader
+import datetime
+from ..loaders import InstagramTagLoader, InstagramImageLoader
 
 
 class InstagramSpider(scrapy.Spider):
@@ -8,7 +9,11 @@ class InstagramSpider(scrapy.Spider):
     allowed_domains = ['www.instagram.com']
     start_urls = ['https://www.instagram.com/']
     login_url = 'https://www.instagram.com/accounts/login/ajax/'
-    json_url = 'https://www.instagram.com/graphql/query/?query_hash=9b498c08113f1e09617a1703c22b2f32&variables='
+    json_url = 'https://www.instagram.com/graphql/query/?query_hash='
+    query_hash = {
+        "posts": "56a7068fea504063273cc2120ffd54f3",
+        "tag_posts": "9b498c08113f1e09617a1703c22b2f32",
+    }
     dict_json_url = {
         "tag_name": "",
         "first": 1,
@@ -44,7 +49,24 @@ class InstagramSpider(scrapy.Spider):
     def tag_parse(self, response):
         js_data = self.js_data_extract(response)
         hashtag = js_data["entry_data"]["TagPage"][0]["graphql"]["hashtag"]
+        date_parse = datetime.datetime.utcnow()
+        data = {
+            "id": hashtag["id"],
+            "name": hashtag["name"],
+            "profile_pic_url": hashtag["profile_pic_url"],
+        }
+        yield from self.instagram_tag(date_parse, data, response)
         yield from self.get_tag_posts(hashtag, response)
+
+    @staticmethod
+    def instagram_tag(date_parse, data, response):
+        loader = InstagramTagLoader(response=response)
+        loader.add_value("data", data)
+        loader.add_value("date", date_parse)
+        yield loader.load_item()
+
+    def tag_api_parse(self, response):
+        yield from self.get_tag_posts(response.json()["data"]["hashtag"], response)
 
     def get_tag_posts(self, hashtag, response):
         if hashtag["edge_hashtag_to_media"]["page_info"]["has_next_page"]:
@@ -53,23 +75,19 @@ class InstagramSpider(scrapy.Spider):
             self.dict_json_url["tag_name"] = name
             self.dict_json_url["after"] = end_cursor
             dict_json = json.dumps(self.dict_json_url)
-            url = f"{self.json_url}{dict_json}"
-            yield response.follow(url, callback=self.get_tag_posts(response.json()["data"]["hashtag"], response))
+            url = f"{self.json_url}{self.query_hash['tag_posts']}&variables={dict_json}"
+            yield response.follow(url, callback=self.tag_api_parse)
         yield from self.images_parse(hashtag["edge_hashtag_to_top_posts"]["edges"], response)
 
-    def images_parse(self, edges, response):
-        loader = InstagramLoader(response=response)
-        # for key, selector in self.data_xpath.items():
-        #     loader.add_xpath(key, selector)
 
-        # js_data = json.loads(response.xpath("//body/p/text()").get())
-        # js_images = js_data["data"]["hashtag"]["edge_hashtag_to_top_posts"]["edges"]
-        list_urls_images = []
+    @staticmethod
+    def images_parse(edges, response):
+        loader = InstagramImageLoader(response=response)
+        date_parse = datetime.datetime.utcnow()
         for image in edges:
-            # list_urls_images.append(image["node"]["display_url"])
             loader.add_value("images", image["node"]["display_url"])
-        loader.add_value("url", response.url)
-        # loader.add_value("images", list_urls_images)
+            loader.add_value("data", image["node"])
+        loader.add_value("date", date_parse)
         yield loader.load_item()
 
     @staticmethod
