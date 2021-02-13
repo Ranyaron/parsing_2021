@@ -11,7 +11,7 @@ class ZillowSpider(scrapy.Spider):
         'pagination': '//div[@class="search-pagination"]/nav[@aria-label="Pagination"]/ul/li/a/@href',
         'ads': '//article[contains(@class, "list-card")]//a[contains(@class, "list-card-link")]/@href',
     }
-    browser = webdriver.Firefox()
+    # browser = webdriver.Firefox()
 
     @staticmethod
     def _get_page_response(response, urls_list, callback):
